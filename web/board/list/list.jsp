@@ -53,27 +53,7 @@
     int lastPageNo = (Integer) request.getAttribute("lastPageNo");
     int PAGE_COUNT_PER_BLOCK = (Integer) request.getAttribute("PAGE_COUNT_PER_BLOCK");
     Paging paging = (Paging) request.getAttribute("paging");
-    int currentPageNo = (Integer) request.getAttribute("currentPageNo");
-
-    int currentBlockNo = paging.getBlockNo(currentPageNo);
-    if (currentBlockNo >= 1) { // 2구간부터는 이전이 존재해야만한다.
-        out.print("[이전]");
-    }
-
-    for(int i = 0, j = startPageNo; i < PAGE_COUNT_PER_BLOCK && j <= lastPageNo; i++, j++) {
-        out.print("<a href=\"./list?page_no=" + j + "\">" + j + "</a>&nbsp;");
-    }
-
-    int lastBlockNo = paging.getBlockNo(lastPageNo);
-
-    // 마지막 구간이 첫번째(즉 0번 index)구간이 아니고, 현재 구간이 마지막 구간보다 작으면(미만)
-    if (lastBlockNo != 0 && currentBlockNo < lastBlockNo) {
-
-        out.print("<a href=\"</a>&nbsp;");
-    }
-
 %>
-
 
 <a href="/alphalee">홈으로 가기</a>
 </body>

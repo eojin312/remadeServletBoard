@@ -24,16 +24,17 @@ public class ListServlet extends HttpServlet {
         connectionMaker = new ConnectionMaker();
     }
 
+    @Override
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
         req.setCharacterEncoding("utf-8");
         res.setCharacterEncoding("utf-8");
         res.setContentType("text/html");
-        String pageNoString = req.getParameter("page_no");
 
+        // 요청을 분석해서 파라미터를 적당한 변수에 담아놓는다.
+        String pageNoString = req.getParameter("page_no");
         if (pageNoString == null || pageNoString.equals("")) {
             pageNoString = "1";
         }
-
         int pageNo = 1;
         try {
             pageNo = Integer.parseInt(pageNoString);
@@ -43,64 +44,45 @@ public class ListServlet extends HttpServlet {
             return;
         }
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-
+        // DAO객체를 만들어낸다
+        ListDao listDao = null;
         try {
-            conn = connectionMaker.getConnecton();
+            listDao = new ListDao();
         } catch (SQLException e) {
-            // error 페이지로 넘기면서 적당한 안내를 해준다.
-            e.printStackTrace();
+            return;
         } catch (ClassNotFoundException e) {
-            // error 페이지로 넘기면서 적당한 안내를 해준다.
-            e.printStackTrace();
+            return;
         }
 
-        ListDao listDao = new ListDao();
-        int totalArticleCount = 0;
+        // 총게시물수를 먼저 알아온다
+        int totalArticleCount;
         try {
             totalArticleCount = listDao.selectCount();
         } catch (SQLException e) {
-            e.printStackTrace();
+            return;
         }
+
+        // 페이징클래스를 통해 가지고 올 범위 정보를 알아내야한다.
         Paging paging = new Paging(PAGE_COUNT_PER_BLOCK, totalArticleCount, ARTICLE_COUNT_PER_PAGE, res);
         int startLimit = paging.getStartLimit(pageNo);
-        int nextBlockStartPageNo = paging.getStartPageByBlockNo(1);
 
-        req.setAttribute("startPageNo", paging.getStartPageNoByPageNo(pageNo));
-        req.setAttribute("lastPageNo", paging.getLastPageNo());
-        req.setAttribute("PAGE_COUNT_PER_BLOCK", PAGE_COUNT_PER_BLOCK);
-
-        req.setAttribute("paging", paging);
-
-        req.setAttribute("currentPageNo", pageNo);
-        req.setAttribute("getStartPageByBlockNo", nextBlockStartPageNo);
-
+        // 게시물리스트를 가지고온다.
+        List<Article> articleList;
         try {
-            listDao = new ListDao();
-            List<Article> articleList = listDao.selectList(startLimit, ARTICLE_COUNT_PER_PAGE);
-            req.setAttribute("articleList", articleList);
-            RequestDispatcher view = req.getRequestDispatcher("/board/list/list.jsp");
-            view.forward(req, res);
+             articleList = listDao.selectList(startLimit, ARTICLE_COUNT_PER_PAGE);
         } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (conn != null) {
-                        try {
-                            conn.close();
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
+            return;
         }
 
+        // servlet으로써의 할일을 다 했으니 articleList를 JSP한테 주면서, 남은 업무를 떠넘기면 된다.
+        req.setAttribute("articleList", articleList);
+        int startPageNo = paging.getStartPageNoByPageNo(pageNo);
+        req.setAttribute("startPageNo", startPageNo);
+        int lastPageNo = paging.getLastPageNo();
+        req.setAttribute("lastPageNo", lastPageNo);
+        req.setAttribute("PAGE_COUNT_PER_BLOCK", PAGE_COUNT_PER_BLOCK);
+        req.setAttribute("currentPageNo", pageNo);
+        RequestDispatcher view = req.getRequestDispatcher("/board/list/list.jsp");
+        view.forward(req, res);
     }
 }

@@ -10,7 +10,6 @@ import java.sql.SQLException;
 
 public class AlphaLeeDao {
     Connection conn;
-    PreparedStatement pstmt;
 
     public AlphaLeeDao() throws SQLException, ClassNotFoundException {
         ConnectionMaker connectionMaker = new ConnectionMaker();
